@@ -45,15 +45,36 @@ console.log("6/6  GIVEN tests");
 console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 await $`bun run test:given`.cwd(ROOT);
 
+const deployed = await readDeployment();
 console.log(`
-🎉 M0 complete.
+🎉 M0 complete. Your contracts on Stellar testnet:
 
-Next (M1): verify the hello proofs on testnet:
+  UltraHonk verifier  ${deployed.uh || "(see .env VERIFIER_ULTRAHONK_ID)"}
+  Groth16 verifier    ${deployed.g16 || "(see .env VERIFIER_GROTH16_ID)"}
+  hello-gate          ${deployed.gate || "(see .env HELLO_GATE_ID)"}
+
+These IDs are yours. They are not shared with other forks.
+
+Next — land the hello circuit (a real --send yes tx):
 
   bun run verify:hello --path noir --network testnet
+
+You should get a stellar.expert /testnet/tx/… link. That is a working ZK
+proof on Stellar. Optional second path:
+
   bun run verify:hello --path circom --network testnet
 
-Or open the /debug page:
+Or click through the pipeline:
 
-  bun run dev
+  bun run dev          # http://127.0.0.1:43121/debug
 `);
+
+async function readDeployment(): Promise<{ uh: string; g16: string; gate: string }> {
+  const { getEnv, readEnvFile } = await import("./env");
+  const env = await readEnvFile();
+  return {
+    uh: getEnv(env, "VERIFIER_ULTRAHONK_ID"),
+    g16: getEnv(env, "VERIFIER_GROTH16_ID"),
+    gate: getEnv(env, "HELLO_GATE_ID"),
+  };
+}

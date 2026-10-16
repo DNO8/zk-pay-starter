@@ -48,3 +48,12 @@ openrouter.key
 # Agent / upload scratch (not part of the starter)
 agent-tools/
 uploads/
+
+# Local-only facilitator artifacts — never commit
+e2e-report.json
+.tree-*.json
+artifacts/noir/withdraw/
+artifacts/circom/withdraw/
+circuits/noir/withdraw/Prover.toml
+circuits/circom/withdraw/input.json
+SOLUTIONS.md

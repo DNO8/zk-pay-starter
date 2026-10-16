@@ -20,6 +20,12 @@ Stellar **testnet** (never mainnet) with two proving paths.
 - `docs/lessons/` — concepts + 3-step hint ladders
 - `vendor/ultrahonk-soroban-verifier` — Nethermind/yugocabrio, MIT OR Apache-2.0
 
+## First-hour path (hackers)
+
+Fork → clone *your* fork → `./scripts/install-tools.sh` → `bun run doctor` →
+`bun install && bun run setup` → `bun run verify:hello --path noir --network testnet`.
+That last command is a live testnet tx. Details: `docs/HACKER.md`.
+
 ## Commands
 
 ```
