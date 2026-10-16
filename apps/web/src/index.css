@@ -3,201 +3,143 @@
 @tailwind utilities;
 
 body {
+  margin: 0;
   font-family:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
 }
-:root {
-  color: #e8eee9;
-  background: #101915;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-}
-body {
-  margin: 0;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-}
-nav {
-  color: #c4d3c9;
-  background: #15231c;
-}
-.payment-app {
-  max-width: 1180px;
-  margin: auto;
-  padding: 54px 26px;
-}
-.payment-app header {
-  max-width: 800px;
-  margin-bottom: 32px;
-}
-.eyebrow,
-.step {
-  letter-spacing: 0.14em;
-  font-size: 12px;
-  font-weight: 700;
-  color: #b9dd7a;
-}
-h1 {
-  font-size: clamp(32px, 5vw, 58px);
-  line-height: 1.1;
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  margin: 18px 0;
-}
-h2 {
-  font-size: 23px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  margin: 12px 0;
-}
-h3 {
-  font-weight: 600;
-}
-.payment-app p {
-  font-size: 14px;
-  line-height: 1.65;
-  color: #b4c4b9;
-  margin: 12px 0;
-}
-.badge {
-  display: inline-block;
-  border: 1px solid #52684f;
-  border-radius: 30px;
-  padding: 7px 12px;
-  font-size: 12px;
-  color: #d2e7bd;
-}
-.notice {
-  border: 1px solid #536244;
-  background: #253021;
-  padding: 18px;
-  border-radius: 12px;
-  color: #d5ddc3;
-  font-size: 14px;
-  line-height: 1.6;
-  margin: 20px 0;
-}
-.flow-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-}
-.flow-grid section {
-  background: #19261f;
-  border: 1px solid #34483a;
-  border-radius: 16px;
-  padding: 26px;
-  min-width: 0;
-}
 button {
-  background: #c2e784;
-  color: #172212;
-  border: 1px solid #c2e784;
-  border-radius: 8px;
-  padding: 11px 16px;
-  font-size: 14px;
-  font-weight: 650;
   cursor: pointer;
-  margin: 8px 8px 8px 0;
 }
 button:disabled {
-  opacity: 0.38;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 button:hover:not(:disabled) {
-  background: #d7f5a6;
+  border-color: #e8a33d;
 }
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 a:focus-visible {
-  outline: 3px solid #f3d98c;
+  outline: 2px solid #e8a33d;
   outline-offset: 3px;
 }
-label {
-  display: block;
-  font-size: 13px;
-  color: #d8e4dc;
-  margin: 18px 0 9px;
+.payment-app {
+  max-width: 48rem;
+  padding: 1rem;
 }
-input:not([type="checkbox"]),
-textarea,
-select {
+.payment-app h1 {
+  font-size: 1.25rem;
+  color: #e8a33d;
+  margin-bottom: 0.5rem;
+}
+.payment-app h2 {
+  font-size: 1rem;
+  margin: 0.5rem 0;
+}
+.payment-app h3 {
+  font-size: 0.875rem;
+}
+.payment-app p {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0.75rem 0;
+}
+.eyebrow,
+.step,
+.badge {
+  font-size: 0.75rem;
+  color: #e8a33d;
+}
+.notice {
+  border: 1px solid #5e5c57;
+  padding: 0.75rem;
+  margin: 1rem 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+.flow-grid {
+  display: grid;
+  gap: 1rem;
+}
+.flow-grid section {
+  border: 1px solid #5e5c57;
+  padding: 0.75rem;
+  min-width: 0;
+}
+.payment-app button {
+  border: 1px solid;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  margin: 0.5rem 0.5rem 0.5rem 0;
+}
+.payment-app label {
+  display: block;
+  font-size: 0.75rem;
+  margin: 0.75rem 0;
+}
+.payment-app input:not([type="checkbox"]),
+.payment-app textarea,
+.payment-app select {
   display: block;
   width: 100%;
-  margin-top: 8px;
-  background: #101a14;
-  border: 1px solid #526352;
-  border-radius: 7px;
-  color: #dce9df;
-  padding: 11px;
-  font-family: monospace;
-  font-size: 12px;
+  margin-top: 0.5rem;
+  background: #0e0e0c;
+  border: 1px solid #5e5c57;
+  padding: 0.5rem;
+  color: #ede6d6;
+  font-family: inherit;
+  font-size: 0.75rem;
   box-sizing: border-box;
 }
-textarea {
-  min-height: 96px;
+.payment-app textarea {
+  min-height: 6rem;
   resize: vertical;
   overflow-wrap: anywhere;
 }
-.check {
+.payment-app .check {
   display: flex;
   align-items: flex-start;
-  gap: 9px;
+  gap: 0.5rem;
   line-height: 1.5;
 }
 .check input {
-  margin-top: 3px;
+  margin-top: 0.2rem;
 }
 .receipt a {
   display: block;
-  color: #c2e784;
+  color: #e8a33d;
   overflow-wrap: anywhere;
-  font-family: monospace;
-  font-size: 12px;
+  font-size: 0.75rem;
   text-decoration: underline;
 }
-.receipt strong {
-  color: #eee;
-}
 .ai-panel {
-  border-top: 1px solid #3d5142;
-  margin-top: 24px;
-  padding-top: 20px;
+  border-top: 1px solid #5e5c57;
+  margin-top: 1rem;
+  padding-top: 1rem;
 }
 .ai-result {
   white-space: pre-wrap;
 }
 .good {
-  color: #c2e784 !important;
+  color: #e8a33d;
 }
 .status {
-  position: sticky;
-  bottom: 16px;
-  background: #26382d;
-  color: #e8f5ec;
-  border-radius: 9px;
-  padding: 15px;
-  margin-top: 24px;
+  border: 1px solid #5e5c57;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .status:empty {
   display: none;
 }
-footer {
-  font-size: 12px;
-  color: #8fa496;
-  margin-top: 32px;
+.payment-app footer {
+  font-size: 0.75rem;
+  margin-top: 1rem;
   line-height: 1.8;
   overflow-wrap: anywhere;
-}
-@media (max-width: 760px) {
-  .flow-grid {
-    grid-template-columns: 1fr;
-  }
-  .payment-app {
-    padding: 30px 16px;
-  }
-  .flow-grid section {
-    padding: 20px;
-  }
 }

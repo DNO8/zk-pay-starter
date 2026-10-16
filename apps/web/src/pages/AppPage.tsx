@@ -189,12 +189,8 @@ export function AppPage() {
   return (
     <main className="payment-app">
       <header>
-        <span className="eyebrow">PACTA / STELLAR TESTNET</span>
-        <h1>
-          A membership proof,
-          <br />
-          one step at a time.
-        </h1>
+        <span className="eyebrow">STELLAR TESTNET</span>
+        <h1>Private payment pipeline</h1>
         <p>
           Deposit 1 test XLM, keep your note, then prove a withdrawal to a fresh
           account.
@@ -211,7 +207,7 @@ export function AppPage() {
       </aside>
       {!config.ready && (
         <p role="status" className="notice">
-          {config.error ?? "Waiting for local payment configuration…"}
+          {config.error ?? "Waiting for testnet payment configuration…"}
         </p>
       )}
       <div className="flow-grid">
@@ -251,7 +247,7 @@ export function AppPage() {
             I saved this note somewhere private.
           </label>
         </section>
-        <section>
+        <section id="deposit">
           <span className="step">02 / DEPOSIT</span>
           <h2>Deposit exactly 1 XLM</h2>
           <p>
@@ -439,7 +435,7 @@ export function AppPage() {
               Check withdrawal confirmation
             </button>
           )}
-          <div className="ai-panel">
+          <div className="ai-panel" id="ai">
             <h3>Required contest AI step: explain privacy limits</h3>
             <p>
               The contest requires one successful real OpenRouter request. Payments can run while AI setup is pending. Uses a fixed synthetic

@@ -9,6 +9,12 @@ The default payment mode is entirely browser-side: ephemeral test account keys, 
 
 `vite.config.ts` `/api` proxy is development-only. Do not publish the separate `apps/api` Bun server: it is a trusted-local workshop signer/prover, not a hosted service. Browser mode does not need it.
 
+## Routes and original controls
+
+`/` and `/debug` keep the original minimal monospace button panel and log. The four hello buttons are visibly marked local: they show CLI commands, not hosted execution. `fund` opens `/app#deposit`, where the browser payment funds its disposable test account when a deposit is submitted. `openrouter stub` opens `/app#ai`; a real request still requires configuration and an explicit click. No old `/fund`, `/prove/hello`, `/verify/hello`, or `/ai/complete` HTTP endpoint is used.
+
+`/app` keeps the complete browser payment flow in the same minimal style. Switching to diagnostics and back within this page retains the payment session in memory. Reloading or closing the page still loses in-memory keys and notes; download the backups first.
+
 ## OpenRouter: required for contest completeness, disabled until configured
 
 A real successful OpenRouter call in the payment flow is required for the contest. That requirement remains PENDING until the owner configures the credentials and explicitly clicks the AI button successfully; implementing the route does not complete it.
