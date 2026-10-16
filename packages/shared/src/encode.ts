@@ -22,8 +22,11 @@ export function encodeG16PublicSignals(fields: Array<string | bigint | number>):
   return out;
 }
 
+// Curve coordinates live in Fq, not the smaller circuit scalar field Fr.
+export const BN254_BASE_MODULUS = 21888242871839275222246405745257275088696311157297823662689037894645226208583n;
 function pad32(n: bigint): Uint8Array {
-  return fieldToBe32(n);
+  if (n < 0n || n >= BN254_BASE_MODULUS) throw new Error("Noncanonical BN254 coordinate");
+  return Uint8Array.from(Buffer.from(n.toString(16).padStart(64, "0"), "hex"));
 }
 
 function parseDecOrHex(s: string): bigint {

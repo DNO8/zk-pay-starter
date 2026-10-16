@@ -55,25 +55,28 @@ await run("cargo verifier + hello-gate + pool hash2", async () => {
 });
 
 if (!givenOnly) {
-  console.log("\nGAP tests (expected RED on main, GREEN on solutions)\n");
-  await run("GAP-1 commitment matches vectors (expect fail on main)", async () => {
+  console.log("\nGAP tests (failures are fatal in this implementation)\n");
+  await run("pool real proof, authorization, replay and rollback", async () => {
+    await $`cargo test -p pool`.cwd(ROOT);
+  });
+  await run("GAP-1 commitment matches vectors", async () => {
     const r = await $`bun test packages/shared/src/note.test.ts --test-name-pattern "GAP-1"`.cwd(
       ROOT,
     ).nothrow();
     if (r.exitCode === 0) console.log("  (green — GAP-1 solved)");
-    else console.log("  (red — expected on main)");
+    else throw new Error("GAP acceptance tests failed");
   });
   await run("circuit withdraw tests", async () => {
     const r = await $`bun test packages/shared/src/circuits.gap.test.ts`.cwd(ROOT).nothrow();
     if (r.exitCode === 0) console.log("  (green — GAP-2/2c solved)");
-    else console.log("  (red — expected on main)");
+    else throw new Error("GAP acceptance tests failed");
   });
   await run("api + checklist gaps", async () => {
     const r = await $`bun test packages/shared/src/app.gap.test.ts`.cwd(ROOT).nothrow();
     if (r.exitCode === 0) console.log("  (green)");
-    else console.log("  (red — expected on main)");
+    else throw new Error("GAP acceptance tests failed");
   });
 }
 
 if (failed) process.exit(1);
-console.log(givenOnly ? "\n✅ GIVEN tests passed" : "\n✅ test runner finished");
+console.log(givenOnly ? "\n✅ GIVEN tests passed" : "\n✅ GIVEN and selected GAP tests passed (see SOLUTION.md for live evidence)");

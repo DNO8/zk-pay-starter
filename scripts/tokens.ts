@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+export {};
 /**
  * Read-only OpenRouter key balance. Needs OPENROUTER_API_KEY.
  * Uses GET https://openrouter.ai/api/v1/key (the key's own metadata).

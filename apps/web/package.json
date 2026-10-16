@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 43121",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0 --port 43121"
+    "preview": "vite preview --host 0.0.0.0 --port 43121",
+    "prepare:payment": "bun run scripts/prepare-payment.ts"
   },
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.1.1",
-    "@zk-pay/shared": "workspace:*"
+    "@zk-pay/shared": "workspace:*",
+    "@stellar/stellar-sdk": "^14.5.0",
+    "snarkjs": "^0.7.5"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

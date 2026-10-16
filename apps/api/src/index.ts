@@ -1,108 +1,167 @@
-import { Keypair, Horizon } from "@stellar/stellar-sdk";
-import { chat } from "./openrouter";
+import { randomBytes } from "node:crypto";
+import { aiStatus, chat } from "./openrouter";
+import {
+  paymentConfig,
+  deposit,
+  prove,
+  withdraw,
+  transaction,
+} from "./payment-service";
 
 const PORT = Number(process.env.API_PORT ?? "43122");
-const logs: string[] = [];
-function log(msg: string) {
-  const line = `${new Date().toISOString()} ${msg}`;
-  logs.push(line);
-  if (logs.length > 200) logs.shift();
-  console.log(line);
-}
-
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-};
-
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data, null, 2), {
+const sessionToken = randomBytes(32).toString("hex");
+const allowedOrigins = new Set([
+  "http://localhost:43121",
+  "http://127.0.0.1:43121",
+]);
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", ...CORS },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+    },
   });
-}
-
-Bun.serve({
-  port: PORT,
-  hostname: "0.0.0.0",
-  async fetch(req) {
-    const url = new URL(req.url);
-    if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
-
-    if (url.pathname === "/health") return json({ ok: true, logs: logs.slice(-20) });
-    if (url.pathname === "/logs") return json({ logs });
-
-    if (url.pathname === "/fund" && req.method === "POST") {
-      const body = (await req.json().catch(() => ({}))) as { address?: string };
-      let address = body.address;
-      let secret: string | undefined;
-      if (!address) {
-        const kp = Keypair.random();
-        address = kp.publicKey();
-        secret = kp.secret();
-      }
-      const res = await fetch(`https://friendbot.stellar.org?addr=${address}`);
-      log(`friendbot ${address} status=${res.status}`);
-      return json({ address, secret, funded: res.ok, status: res.status });
-    }
-
-    if (url.pathname === "/ai/complete" && req.method === "POST") {
-      const body = (await req.json()) as { prompt?: string };
-      const result = await chat(body.prompt ?? "Say hello in one sentence.");
-      log(`openrouter stub model=${result.model} chars=${result.text.length}`);
-      return json(result);
-    }
-
-    if (url.pathname === "/prove/hello" && req.method === "POST") {
-      const body = (await req.json().catch(() => ({}))) as { path?: string };
-      const provingPath = body.path === "circom" ? "circom" : "noir";
-      log(`prove hello path=${provingPath}`);
-      const proc = Bun.spawn(["bun", "run", "prove:hello", "--path", provingPath], {
-        cwd: joinRepo(),
-        stdout: "pipe",
-        stderr: "pipe",
-      });
-      const out = await new Response(proc.stdout).text();
-      const err = await new Response(proc.stderr).text();
-      const code = await proc.exited;
-      log(`prove hello exit=${code}`);
-      return json({ ok: code === 0, out, err, path: provingPath });
-    }
-
-    if (url.pathname === "/verify/hello" && req.method === "POST") {
-      const body = (await req.json().catch(() => ({}))) as { path?: string };
-      const provingPath = body.path === "circom" ? "circom" : "noir";
-      log(`verify hello path=${provingPath}`);
-      const proc = Bun.spawn(
-        ["bun", "run", "verify:hello", "--path", provingPath, "--network", "testnet"],
-        { cwd: joinRepo(), stdout: "pipe", stderr: "pipe" },
-      );
-      const out = await new Response(proc.stdout).text();
-      const err = await new Response(proc.stderr).text();
-      const code = await proc.exited;
-      log(`verify hello exit=${code}`);
-      return json({ ok: code === 0, out, err, path: provingPath });
-    }
-
-    // TODO(GAP-7): the AI step in the payment flow (e.g. parse a payment request / check a memo / explain result), visible in logs
-    //   → docs/lessons/07.md#hints
-    if (url.pathname === "/pay/ai-step" && req.method === "POST") {
+let paymentBusy = false;
+export async function handleRequest(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  // This is a trusted-local workshop backend, never a publicly hosted signer.
+  if (!["localhost", "127.0.0.1"].includes(url.hostname))
+    return json({ error: "Local backend only" }, 403);
+  const origin = req.headers.get("origin");
+  if (origin && !allowedOrigins.has(origin))
+    return json({ error: "Origin not allowed" }, 403);
+  if (req.method === "GET" && url.pathname === "/health")
+    return json({
+      ok: true,
+      network: "testnet",
+      mode: "trusted-local",
+      sessionToken,
+      ai: aiStatus(),
+    });
+  if (req.method === "GET" && url.pathname === "/pay/config") {
+    try {
+      return json(await paymentConfig());
+    } catch {
       return json(
         {
-          error: "TODO(GAP-7): wire chat() into the deposit/withdraw flow and log it. See docs/lessons/07.md#hints",
+          ready: false,
+          error:
+            "Payment service is not configured. Run local testnet setup first.",
         },
-        501,
+        503,
       );
     }
-
-    return json({ error: "not found" }, 404);
-  },
-});
-
-function joinRepo() {
-  return new URL("../../..", import.meta.url).pathname;
+  }
+  if (req.method === "GET" && url.pathname === "/pay/transaction") {
+    const hash = url.searchParams.get("hash") ?? "";
+    if (!/^[a-f0-9]{64}$/i.test(hash))
+      return json({ error: "Invalid transaction hash" }, 400);
+    try {
+      return json(await transaction(hash));
+    } catch {
+      return json({ error: "Could not query testnet transaction" }, 502);
+    }
+  }
+  if (req.method !== "POST") return json({ error: "Not found" }, 404);
+  if (req.headers.get("x-local-session") !== sessionToken)
+    return json({ error: "Local session required. Reload the page." }, 403);
+  if (!req.headers.get("content-type")?.startsWith("application/json"))
+    return json({ error: "JSON required" }, 415);
+  if (Number(req.headers.get("content-length") ?? 0) > 16384)
+    return json({ error: "Request too large" }, 413);
+  let body: Record<string, unknown>;
+  try {
+    const raw = await req.text();
+    if (raw.length > 16384) return json({ error: "Request too large" }, 413);
+    body = JSON.parse(raw);
+    if (!body || typeof body !== "object" || Array.isArray(body))
+      throw new Error();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+  if (url.pathname === "/pay/ai-step") {
+    if (Object.keys(body).length)
+      return json(
+        { error: "This route accepts no payment data or custom prompt" },
+        400,
+      );
+    if (!aiStatus().enabled)
+      return json(
+        {
+          error:
+            "AI pending: configure a server key and explicit call limit. No AI response generated.",
+        },
+        503,
+      );
+    try {
+      return json(await chat());
+    } catch (error) {
+      return json(
+        { error: error instanceof Error ? error.message : "AI call failed" },
+        502,
+      );
+    }
+  }
+  if (!["/pay/deposit", "/pay/prove", "/pay/withdraw"].includes(url.pathname))
+    return json({ error: "Not found" }, 404);
+  if (paymentBusy)
+    return json({ error: "A payment operation is already running" }, 409);
+  paymentBusy = true;
+  try {
+    if (url.pathname === "/pay/deposit") {
+      if (
+        typeof body.commitment !== "string" ||
+        !/^(0x[0-9a-f]{1,64}|[0-9]{1,78})$/i.test(body.commitment) ||
+        typeof body.depositor !== "string"
+      )
+        return json({ error: "Invalid commitment or depositor" }, 400);
+      return json(
+        await deposit({
+          commitment: body.commitment,
+          depositor: body.depositor,
+        }),
+      );
+    }
+    if (url.pathname === "/pay/prove") {
+      if (
+        typeof body.note !== "string" ||
+        !/^[0-9a-f]{128}$/i.test(body.note) ||
+        typeof body.recipient !== "string" ||
+        !/^G[A-Z2-7]{55}$/.test(body.recipient) ||
+        body.trustedLocal !== true
+      )
+        return json(
+          {
+            error: "Valid note, recipient, and trusted-local consent required",
+          },
+          400,
+        );
+      return json(await prove({ note: body.note, recipient: body.recipient }));
+    }
+    if (
+      typeof body.proofId !== "string" ||
+      !/^[a-zA-Z0-9_-]{1,128}$/.test(body.proofId)
+    )
+      return json({ error: "Invalid proof id" }, 400);
+    return json(await withdraw({ proofId: body.proofId }));
+  } catch {
+    // Never return subprocess stderr or witnesses: those may contain notes or keys.
+    return json(
+      {
+        error:
+          "Payment operation failed. Check local configuration and chain state; no success is assumed. Do not repeat a deposit until checking its status.",
+      },
+      502,
+    );
+  } finally {
+    paymentBusy = false;
+  }
 }
-
-log(`api listening on http://127.0.0.1:${PORT}`);
-void Horizon;
+if (import.meta.main) {
+  Bun.serve({ port: PORT, hostname: "127.0.0.1", fetch: handleRequest });
+  console.info(
+    `Trusted-local testnet API listening on http://127.0.0.1:${PORT}`,
+  );
+}

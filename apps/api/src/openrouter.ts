@@ -1,55 +1,74 @@
-/**
- * OpenRouter client stub. Defaults to a small model and max_tokens=300.
- * Never put the key in the frontend. Logs every request (no secrets).
- */
+/** Server-only, bounded educational call. Never accepts payment data or prompts. */
 export type ChatResult = {
   id: string;
   model: string;
   text: string;
   usage?: { prompt_tokens?: number; completion_tokens?: number };
 };
-
-const DEFAULT_MODEL = process.env.OPENROUTER_MODEL ?? "openai/gpt-4.1-nano";
-const DEFAULT_MAX = Number(process.env.OPENROUTER_MAX_TOKENS ?? "300");
-
-export async function chat(prompt: string, opts?: { model?: string; maxTokens?: number }): Promise<ChatResult> {
-  const key = process.env.OPENROUTER_API_KEY;
-  const model = opts?.model ?? DEFAULT_MODEL;
-  const max_tokens = opts?.maxTokens ?? DEFAULT_MAX;
-  console.log(`[openrouter] request model=${model} max_tokens=${max_tokens} prompt_chars=${prompt.length}`);
-
-  if (!key) {
-    console.log("[openrouter] no OPENROUTER_API_KEY; returning stub");
-    return {
-      id: "stub",
-      model,
-      text: `(stub) no OPENROUTER_API_KEY. Prompt was ${prompt.length} chars.`,
-    };
-  }
-
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
+export const EDUCATIONAL_PROMPT =
+  "Explain in Spanish in at most three short sentences why a Groth16 membership proof for a fixed-denomination Stellar testnet payment does not guarantee anonymity. Mention that the educational setup is not a production trusted ceremony. Mention timing, small anonymity sets, and independent recipient funding. This is a synthetic educational example, not a real payment or legal settlement.";
+let calls = 0;
+const limit = () =>
+  Math.min(
+    10,
+    Math.max(0, Number(process.env.OPENROUTER_MAX_CALLS ?? "0") || 0),
+  );
+export function aiStatus() {
+  return {
+    enabled: Boolean(process.env.OPENROUTER_API_KEY) && calls < limit(),
+    callsUsed: calls,
+    maxCalls: limit(),
+    model: process.env.OPENROUTER_MODEL ?? "openai/gpt-4.1-nano",
+  };
+}
+export async function chat(): Promise<ChatResult> {
+  const status = aiStatus();
+  if (!status.enabled)
+    throw new Error(
+      "OpenRouter disabled: configure server key and OPENROUTER_MAX_CALLS (1–10). No AI response was generated.",
+    );
+  calls++; // Reserve before await; failures also consume the per-process allowance.
+  const response = await fetch(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      method: "POST",
+      signal: AbortSignal.timeout(30_000),
+      headers: {
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: status.model,
+        max_tokens: 180,
+        messages: [{ role: "user", content: EDUCATIONAL_PROMPT }],
+      }),
     },
-    body: JSON.stringify({
-      model,
-      max_tokens,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`OpenRouter ${res.status}: ${body.slice(0, 300)}`);
-  }
-  const json = (await res.json()) as {
-    id: string;
-    model: string;
+  );
+  if (!response.ok)
+    throw new Error(
+      `OpenRouter request failed (${response.status}); no payment data was sent.`,
+    );
+  const result = (await response.json()) as {
+    id?: string;
+    model?: string;
     choices?: { message?: { content?: string } }[];
     usage?: ChatResult["usage"];
   };
-  const text = json.choices?.[0]?.message?.content ?? "";
-  console.log(`[openrouter] response id=${json.id} chars=${text.length}`);
-  return { id: json.id, model: json.model, text, usage: json.usage };
+  const text = result.choices?.[0]?.message?.content;
+  if (!result.id || !text)
+    throw new Error("OpenRouter returned no usable response.");
+  console.info(
+    JSON.stringify({
+      event: "payment.openrouter.completed",
+      id: result.id,
+      model: result.model ?? status.model,
+      usage: result.usage,
+    }),
+  );
+  return {
+    id: result.id,
+    model: result.model ?? status.model,
+    text,
+    usage: result.usage,
+  };
 }

@@ -234,12 +234,9 @@ async function main() {
   );
   const gate = await deploy("hello-gate", "hello_gate", [addr(uh), addr(g16)]);
   const token = Asset.native().contractId(Networks.TESTNET);
-  const pool = await deploy("pool", "pool", [
-    addr(key.publicKey()),
-    addr(token),
-    nativeToScVal(100000000n, { type: "i128" }),
-    addr(uh),
-  ]);
+  // A payment pool requires the four-input withdrawal VK, never the hello VK.
+  const pool = "";
+  console.log("GIVEN setup skips the payment pool; use the payment deployment workflow.");
   const values = {
     VERIFIER_ULTRAHONK_ID: uh,
     VERIFIER_GROTH16_ID: g16,

@@ -25,12 +25,6 @@ if (provingPath !== "noir" && provingPath !== "circom") {
   process.exit(1);
 }
 
-if (circuit === "withdraw") {
-  console.warn(
-    "⚠️  withdraw proving is a GAP. This will only succeed after GAP-2 / GAP-2c. See docs/lessons/02.md",
-  );
-}
-
 const artifacts = join(ROOT, "artifacts", provingPath, circuit);
 mkdirSync(artifacts, { recursive: true });
 
@@ -93,13 +87,18 @@ const circomFile = circuit === "hello" ? "hello.circom" : "withdraw.circom";
 await $`circom ${circomFile} --r1cs --wasm --sym -o ${dir}`.cwd(dir);
 const r1cs = join(dir, `${circuit}.r1cs`);
 const wasm = join(dir, `${circuit}_js`, `${circuit}.wasm`);
-const zkey = join(artifacts, `${circuit}.zkey`);
+// Withdrawal uses a stable, randomly contributed development setup.
+// Never regenerate a deployed circuit's verification key while producing a proof.
+if (circuit === "withdraw" && !existsSync(join(artifacts, "withdraw-final.zkey"))) {
+  await $`node scripts/setup-withdraw-groth16.mjs`.cwd(ROOT);
+}
+const zkey = join(artifacts, circuit === "withdraw" ? "withdraw-final.zkey" : `${circuit}.zkey`);
 const input = join(dir, "input.json");
 if (!existsSync(input)) {
   await Bun.write(input, circuit === "hello" ? `{"x":"3"}\n` : "{}\n");
 }
 const wtns = join(artifacts, "witness.wtns");
-await $`bunx snarkjs@0.7.5 groth16 setup ${r1cs} ${ptau} ${zkey}`;
+if (circuit === "hello") await $`bunx snarkjs@0.7.5 groth16 setup ${r1cs} ${ptau} ${zkey}`;
 await $`bunx snarkjs@0.7.5 wtns calculate ${wasm} ${input} ${wtns}`;
 const proofPath = join(artifacts, "proof.json");
 const publicPath = join(artifacts, "public.json");

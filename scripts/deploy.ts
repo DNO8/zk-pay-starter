@@ -138,22 +138,7 @@ if (want("hello-gate")) {
 }
 
 if (want("pool")) {
-  const native = await $`stellar contract id asset --asset native --rpc-url ${rpc} --network-passphrase ${passphrase}`
-    .cwd(ROOT)
-    .text();
-  const token = native.trim();
-  const verifier = ids.verifierUltrahonk || getEnv(env, "VERIFIER_ULTRAHONK_ID");
-  ids.pool = await deployWasm("pool", wasm("pool", "pool"), [
-    "--admin",
-    deployer.publicKey,
-    "--token",
-    token,
-    "--denomination",
-    "100000000",
-    "--verifier",
-    verifier,
-  ]);
-  ids.nativeToken = token;
+  console.log("Payment pool skipped: deploy it with its four-input withdrawal VK using the payment workflow, not the hello VK.");
 }
 
 const alice = wallets.find((w) => w.name === "alice")!;

@@ -28,7 +28,8 @@
     "gen:consts": "bun run packages/shared/scripts/gen-consts.ts",
     "cost": "bun run scripts/cost.ts",
     "first-proof": "bun run scripts/verify.ts hello --path noir --network testnet",
-    "setup:sdk": "bun run scripts/setup-sdk.ts"
+    "setup:sdk": "bun run scripts/setup-sdk.ts",
+    "payment:testnet": "bun run scripts/payment-sdk.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

@@ -1,24 +1,26 @@
 #![no_std]
-//! Privacy-pool skeleton. Deposit transfers a fixed denomination and emits the
-//! commitment. Merkle insert, nullifier set, and public-input wiring are GAPS.
+//! Fixed-denomination testnet pool with BN254 Poseidon and an immutable-key Groth16 verification path.
 
 mod poseidon_params;
 
 use soroban_sdk::{
-    contract, contracterror, contractevent, contractimpl, contracttype, symbol_short, token,
-    Address, Bytes, BytesN, Env, Symbol, Vec, U256,
+    contract, contractclient, contracterror, contractevent, contractimpl, contracttype,
+    symbol_short, token, Address, Bytes, BytesN, Env, Symbol, Vec, U256,
 };
+
+use soroban_sdk::xdr::ToXdr;
 
 use poseidon_params::{D, MDS_BE, RC_BE, ROUNDS_F, ROUNDS_P, T};
 
 const TOKEN: Symbol = symbol_short!("TOKEN");
 const DENOM: Symbol = symbol_short!("DENOM");
 const VERIF: Symbol = symbol_short!("VERIF");
+const VK: Symbol = symbol_short!("VK");
 const NEXT: Symbol = symbol_short!("NEXT");
 const ROOT: Symbol = symbol_short!("ROOT");
 const ADMIN: Symbol = symbol_short!("ADMIN");
 
-/// How many historical Merkle roots the contract remembers (GAP-3).
+/// How many historical Merkle roots the contract remembers.
 pub const ROOT_HISTORY: u32 = 32;
 pub const TREE_DEPTH: u32 = 8;
 
@@ -32,7 +34,9 @@ pub enum Error {
     NullifierUsed = 4,
     BadProof = 5,
     WrongAmount = 6,
-    TodoGap = 7,
+    NonCanonicalField = 7,
+    DuplicateCommitment = 8,
+    BadRecipient = 9,
 }
 
 #[contracttype]
@@ -41,6 +45,7 @@ pub enum DataKey {
     Node(u32, u32), // level, index
     Nullifier(BytesN<32>),
     Zero(u32),
+    Commitment(BytesN<32>),
 }
 
 #[contractevent]
@@ -48,6 +53,43 @@ pub struct DepositEvent {
     pub from: Address,
     pub index: u32,
     pub commitment: U256,
+}
+
+#[contractclient(name = "G16VerifierClient")]
+pub trait G16Verifier {
+    fn set_vk(vk_bytes: Bytes);
+    fn verify(proof_bytes: Bytes, pub_signals_bytes: Bytes) -> bool;
+}
+
+// BN254 scalar modulus from packages/shared/poseidon.params.json.
+const MODULUS: [u8; 32] = [
+    0x30, 0x64, 0x4e, 0x72, 0xe1, 0x31, 0xa0, 0x29, 0xb8, 0x50, 0x45, 0xb6, 0x81, 0x81, 0x58, 0x5d,
+    0x28, 0x33, 0xe8, 0x48, 0x79, 0xb9, 0x70, 0x91, 0x43, 0xe1, 0xf5, 0x93, 0xf0, 0x00, 0x00, 0x01,
+];
+fn canonical(env: &Env, value: &U256) -> bool {
+    value < &u256_from_be(env, &MODULUS)
+}
+fn key_bytes(value: &U256) -> BytesN<32> {
+    value.to_be_bytes().try_into().unwrap()
+}
+fn retain(env: &Env, key: &DataKey) {
+    let ttl = env.storage().max_ttl();
+    env.storage().persistent().extend_ttl(key, ttl / 2, ttl);
+}
+fn keep_alive(env: &Env) {
+    let ttl = env.storage().max_ttl();
+    env.storage().instance().extend_ttl(ttl / 2, ttl);
+}
+/// Account and contract addresses both end with their 32-byte identifier in XDR.
+/// Only account recipients are accepted: the lesson's field mapping does not bind
+/// an address-type tag, so accepting both types would permit payout redirection
+/// to the contract with the same payload.
+fn recipient_field(env: &Env, recipient: &Address) -> Result<U256, Error> {
+    let encoded = recipient.clone().to_xdr(env);
+    if encoded.len() != 44 {
+        return Err(Error::BadRecipient);
+    }
+    Ok(U256::from_be_bytes(env, &encoded.slice(12..44)).rem_euclid(&u256_from_be(env, &MODULUS)))
 }
 
 #[contract]
@@ -90,9 +132,9 @@ pub fn poseidon_hash2(env: &Env, a: &U256, b: &U256) -> U256 {
     let mds = load_mds(env);
     let rc = load_rc(env);
     let field = Symbol::new(env, "BN254");
-    let out = env.crypto_hazmat().poseidon_permutation(
-        &input, field, T, D, ROUNDS_F, ROUNDS_P, &mds, &rc,
-    );
+    let out = env
+        .crypto_hazmat()
+        .poseidon_permutation(&input, field, T, D, ROUNDS_F, ROUNDS_P, &mds, &rc);
     out.get(0).unwrap()
 }
 
@@ -101,8 +143,10 @@ fn zeros_at(env: &Env, level: u32) -> U256 {
         return z;
     }
     let mut z = U256::from_u32(env, 0);
-    for _ in 0..level {
+    env.storage().instance().set(&DataKey::Zero(0), &z);
+    for i in 1..=level {
         z = poseidon_hash2(env, &z, &z);
+        env.storage().instance().set(&DataKey::Zero(i), &z);
     }
     env.storage().instance().set(&DataKey::Zero(level), &z);
     z
@@ -110,10 +154,26 @@ fn zeros_at(env: &Env, level: u32) -> U256 {
 
 #[contractimpl]
 impl Pool {
-    pub fn __constructor(env: Env, admin: Address, token: Address, denomination: i128, verifier: Address) {
+    pub fn __constructor(
+        env: Env,
+        admin: Address,
+        token: Address,
+        denomination: i128,
+        verifier: Address,
+        vk_bytes: Bytes,
+    ) {
+        assert!(denomination > 0, "denomination must be positive");
         env.storage().instance().set(&ADMIN, &admin);
         env.storage().instance().set(&TOKEN, &token);
         env.storage().instance().set(&DENOM, &denomination);
+        // Validate the four-public-input VK once and pin it with no setter.
+        assert!(
+            vk_bytes.len() == 772
+                && vk_bytes.slice(448..452) == Bytes::from_array(&env, &[0, 0, 0, 5]),
+            "expected four-public-input Groth16 VK"
+        );
+        G16VerifierClient::new(&env, &verifier).set_vk(&vk_bytes);
+        env.storage().instance().set(&VK, &vk_bytes);
         env.storage().instance().set(&VERIF, &verifier);
         env.storage().instance().set(&NEXT, &0u32);
         let empty = zeros_at(&env, TREE_DEPTH);
@@ -140,32 +200,78 @@ impl Pool {
             .unwrap_or_else(|| U256::from_u32(&env, 0))
     }
 
+    /// Return a deposited leaf for off-chain witness reconstruction.
+    pub fn commitment_at(env: Env, index: u32) -> Option<U256> {
+        env.storage().persistent().get(&DataKey::Node(0, index))
+    }
+
     /// GIVEN helper so hackers can compare on-chain Poseidon against golden vectors.
     pub fn hash2(env: Env, a: U256, b: U256) -> U256 {
         poseidon_hash2(&env, &a, &b)
     }
 
-    /// Deposit `denomination` of `token` from `from` and record `commitment`.
-    /// TODO(GAP-3): on-chain Merkle insert (CAP-0075, shared params) + root history
-    ///   → docs/lessons/03.md#hints
+    /// Deposit exactly the configured denomination, then append a unique leaf.
     pub fn deposit(env: Env, from: Address, commitment: U256) -> Result<u32, Error> {
         from.require_auth();
-        let token_id: Address = env.storage().instance().get(&TOKEN).ok_or(Error::NotInitialized)?;
-        let denom: i128 = env.storage().instance().get(&DENOM).ok_or(Error::NotInitialized)?;
-        let client = token::Client::new(&env, &token_id);
-        client.transfer(&from, &env.current_contract_address(), &denom);
-
-        let index: u32 = env.storage().instance().get(&NEXT).unwrap_or(0);
+        if !canonical(&env, &commitment) {
+            return Err(Error::NonCanonicalField);
+        }
+        let index: u32 = env
+            .storage()
+            .instance()
+            .get(&NEXT)
+            .ok_or(Error::NotInitialized)?;
         if index >= (1u32 << TREE_DEPTH) {
             return Err(Error::TreeFull);
         }
-
-        // TODO(GAP-3): insert `commitment` at `index`, recompute the path up to the
-        // root with poseidon_hash2, append the new root to the ring buffer of
-        // ROOT_HISTORY roots, bump NEXT.
-        let _ = commitment;
+        let commitment_key = DataKey::Commitment(key_bytes(&commitment));
+        if env.storage().persistent().has(&commitment_key) {
+            return Err(Error::DuplicateCommitment);
+        }
+        let token_id: Address = env
+            .storage()
+            .instance()
+            .get(&TOKEN)
+            .ok_or(Error::NotInitialized)?;
+        let denom: i128 = env
+            .storage()
+            .instance()
+            .get(&DENOM)
+            .ok_or(Error::NotInitialized)?;
+        token::Client::new(&env, &token_id).transfer(
+            &from,
+            &env.current_contract_address(),
+            &denom,
+        );
+        env.storage().persistent().set(&commitment_key, &true);
+        retain(&env, &commitment_key);
+        let mut cur = commitment.clone();
+        let mut i = index;
+        // Store all nodes so independent deposits can rebuild a witness off-chain.
+        for level in 0..TREE_DEPTH {
+            let key = DataKey::Node(level, i);
+            env.storage().persistent().set(&key, &cur);
+            retain(&env, &key);
+            let sibling: U256 = env
+                .storage()
+                .persistent()
+                .get(&DataKey::Node(level, i ^ 1))
+                .unwrap_or_else(|| zeros_at(&env, level));
+            cur = if i % 2 == 0 {
+                poseidon_hash2(&env, &cur, &sibling)
+            } else {
+                poseidon_hash2(&env, &sibling, &cur)
+            };
+            i >>= 1;
+        }
+        env.storage().instance().set(&ROOT, &cur);
+        env.storage()
+            .instance()
+            .set(&DataKey::RootHist((index + 1) % ROOT_HISTORY), &cur);
+        env.storage().instance().set(&NEXT, &(index + 1));
+        keep_alive(&env);
         DepositEvent {
-            from: from.clone(),
+            from,
             index,
             commitment,
         }
@@ -173,9 +279,8 @@ impl Pool {
         Ok(index)
     }
 
-    /// TODO(GAP-4): nullifier set + double-spend reject → docs/lessons/05.md#hints
-    /// TODO(GAP-5): public-input wiring to the verifier (order, encoding, recipient/fee)
-    ///   → docs/lessons/04.md#hints
+    /// Verify with the pool-pinned Groth16 verification key before consuming a note.
+    /// The relayer fee is a bearer reward: its amount, but not its payee, is public.
     pub fn withdraw(
         env: Env,
         proof: Bytes,
@@ -185,129 +290,110 @@ impl Pool {
         fee: i128,
         relayer: Address,
     ) -> Result<(), Error> {
-        let _ = (env, proof, root, nullifier_hash, recipient, fee, relayer);
-        // Skeleton: always refuse until GAP-4 and GAP-5 are filled in.
-        Err(Error::TodoGap)
+        if !canonical(&env, &root) || !canonical(&env, &nullifier_hash) {
+            return Err(Error::NonCanonicalField);
+        }
+        let denom: i128 = env
+            .storage()
+            .instance()
+            .get(&DENOM)
+            .ok_or(Error::NotInitialized)?;
+        if fee < 0 || fee > denom {
+            return Err(Error::WrongAmount);
+        }
+        let recipient_value = recipient_field(&env, &recipient)?;
+        // Raw-address modulo r is not injective. Requiring the payout account's
+        // authorization prevents a copied proof from burning funds to an alias.
+        // Workshop withdrawals are signed by the independently funded recipient.
+        recipient.require_auth();
+        if recipient == env.current_contract_address()
+            || (fee > 0 && relayer == env.current_contract_address())
+        {
+            return Err(Error::BadRecipient);
+        }
+        if !Self::is_known_root(env.clone(), root.clone()) {
+            return Err(Error::UnknownRoot);
+        }
+        let key = DataKey::Nullifier(key_bytes(&nullifier_hash));
+        if env.storage().persistent().has(&key) {
+            return Err(Error::NullifierUsed);
+        }
+        let mut inputs = Bytes::from_array(&env, &[0, 0, 0, 4]);
+        inputs.append(&root.to_be_bytes());
+        inputs.append(&nullifier_hash.to_be_bytes());
+        inputs.append(&recipient_value.to_be_bytes());
+        inputs.append(&U256::from_u128(&env, fee as u128).to_be_bytes());
+        let verifier: Address = env
+            .storage()
+            .instance()
+            .get(&VERIF)
+            .ok_or(Error::NotInitialized)?;
+        let vk: Bytes = env
+            .storage()
+            .instance()
+            .get(&VK)
+            .ok_or(Error::NotInitialized)?;
+        let verifier_client = G16VerifierClient::new(&env, &verifier);
+        // The workshop's protected verifier has a public mutable set_vk. Always
+        // restore our pinned key immediately before verification, in the SAME
+        // atomic call. No transaction can replace it between these invocations.
+        // The trusted verifier has no callbacks. Neither address nor VK is mutable here.
+        if !matches!(verifier_client.try_set_vk(&vk), Ok(Ok(()))) {
+            return Err(Error::BadProof);
+        }
+        if !matches!(verifier_client.try_verify(&proof, &inputs), Ok(Ok(true))) {
+            return Err(Error::BadProof);
+        }
+        // Persistent entries are archived, never silently deleted. Restoration
+        // preserves this marker. No API can erase it; every use extends its TTL.
+        env.storage().persistent().set(&key, &true);
+        retain(&env, &key);
+        keep_alive(&env);
+        let token_id: Address = env
+            .storage()
+            .instance()
+            .get(&TOKEN)
+            .ok_or(Error::NotInitialized)?;
+        let client = token::Client::new(&env, &token_id);
+        let pool = env.current_contract_address();
+        if denom > fee {
+            client.transfer(&pool, &recipient, &(denom - fee));
+        }
+        if fee > 0 {
+            client.transfer(&pool, &relayer, &fee);
+        }
+        Ok(())
     }
 
-    pub fn is_known_root(_env: Env, _root: U256) -> bool {
-        // TODO(GAP-3): look up root history
+    pub fn is_known_root(env: Env, root: U256) -> bool {
+        if !canonical(&env, &root) {
+            return false;
+        }
+        for slot in 0..ROOT_HISTORY {
+            if env
+                .storage()
+                .instance()
+                .get::<_, U256>(&DataKey::RootHist(slot))
+                == Some(root.clone())
+            {
+                return true;
+            }
+        }
         false
     }
 
-    pub fn is_spent(_env: Env, _nullifier_hash: U256) -> bool {
-        // TODO(GAP-4)
-        false
+    pub fn is_spent(env: Env, nullifier_hash: U256) -> bool {
+        if !canonical(&env, &nullifier_hash) {
+            return false;
+        }
+        let key = DataKey::Nullifier(key_bytes(&nullifier_hash));
+        let spent = env.storage().persistent().has(&key);
+        if spent {
+            retain(&env, &key);
+        }
+        spent
     }
 }
 
 #[cfg(test)]
-mod test {
-    use super::*;
-    use soroban_sdk::{testutils::Address as _, Address, Env};
-
-    fn setup() -> (Env, Address, Address, Address) {
-        let env = Env::default();
-        env.mock_all_auths();
-        let admin = Address::generate(&env);
-        let token = env.register_stellar_asset_contract_v2(admin.clone());
-        let verifier = Address::generate(&env);
-        let pool_id = env.register(
-            Pool,
-            (admin.clone(), token.address(), 10_0000000i128, verifier.clone()),
-        );
-        (env, pool_id, token.address(), admin)
-    }
-
-    #[test]
-    fn hash2_matches_shared_vector() {
-        let env = Env::default();
-        env.cost_estimate().budget().reset_unlimited();
-        let a = U256::from_u32(&env, 1);
-        let b = U256::from_u32(&env, 2);
-        let got = poseidon_hash2(&env, &a, &b);
-        // golden.hash2_1_2
-        let expected = U256::from_be_bytes(
-            &env,
-            &Bytes::from_slice(
-                &env,
-                &hex_literal("115cc0f5e7d690413df64c6b9662e9cf2a3617f2743245519e19607a4417189a"),
-            ),
-        );
-        assert_eq!(got, expected);
-    }
-
-    fn hex_literal(s: &str) -> [u8; 32] {
-        let mut out = [0u8; 32];
-        for i in 0..32 {
-            out[i] = u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).unwrap();
-        }
-        out
-    }
-
-    #[test]
-    fn insert_matches_shared_root() {
-        let (env, pool_id, token, admin) = setup();
-        env.cost_estimate().budget().reset_unlimited();
-        let sac = token::StellarAssetClient::new(&env, &token);
-        let alice = Address::generate(&env);
-        sac.mint(&alice, &10_0000000);
-        let client = PoolClient::new(&env, &pool_id);
-        let c1 = client.hash2(&U256::from_u32(&env, 1), &U256::from_u32(&env, 2));
-        client.deposit(&alice, &c1);
-        let expected = U256::from_be_bytes(
-            &env,
-            &Bytes::from_slice(
-                &env,
-                &hex_literal("2bc1d1747efc8efb64de5bd56a83aa95bbc06f9a699e6054b8bffed5b336c718"),
-            ),
-        );
-        // golden.merkle.root_after_1 as BE. The test is red until GAP-3 inserts.
-        assert_eq!(client.current_root(), expected);
-        let _ = admin;
-    }
-
-    #[test]
-    fn rejects_reused_nullifier() {
-        let (env, pool_id, _token, _admin) = setup();
-        let client = PoolClient::new(&env, &pool_id);
-        let dummy = Bytes::from_slice(&env, &[0u8; 8]);
-        let root = client.current_root();
-        let nh = U256::from_u32(&env, 1);
-        let recipient = Address::generate(&env);
-        let first = client.try_withdraw(&dummy, &root, &nh, &recipient, &0, &recipient);
-        let second = client.try_withdraw(&dummy, &root, &nh, &recipient, &0, &recipient);
-        assert!(first.is_ok(), "first withdraw of a valid note should succeed once GAP-4/5 are done");
-        assert_eq!(second, Err(Ok(Error::NullifierUsed)));
-    }
-
-    #[test]
-    fn rejects_unknown_root() {
-        let (env, pool_id, _token, _admin) = setup();
-        let client = PoolClient::new(&env, &pool_id);
-        let dummy = Bytes::from_slice(&env, &[0u8; 8]);
-        let unknown = U256::from_u32(&env, 42);
-        let recipient = Address::generate(&env);
-        assert_eq!(
-            client.try_withdraw(&dummy, &unknown, &U256::from_u32(&env, 1), &recipient, &0, &recipient),
-            Err(Ok(Error::UnknownRoot))
-        );
-    }
-
-    #[test]
-    fn withdraw_verifies_vector_proof() {
-        let (env, pool_id, _token, _admin) = setup();
-        let client = PoolClient::new(&env, &pool_id);
-        let dummy = Bytes::from_slice(&env, &[0u8; 8]);
-        let recipient = Address::generate(&env);
-        let result = client.try_withdraw(
-            &dummy,
-            &client.current_root(),
-            &U256::from_u32(&env, 1),
-            &recipient,
-            &0,
-            &recipient,
-        );
-        assert!(result.is_ok(), "TODO(GAP-5): withdraw should verify a real vector proof. See docs/lessons/04.md#hints");
-    }
-}
+mod test;

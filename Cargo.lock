@@ -1208,6 +1208,7 @@ name = "pool"
 version = "0.1.0"
 dependencies = [
  "soroban-sdk",
+ "verifier-groth16",
 ]
 
 [[package]]

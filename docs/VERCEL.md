@@ -1,47 +1,48 @@
-# Publicación manual: requisitos y estado
+# Publicación manual en Vercel
 
-Estado: preparación; el flujo privado del starter todavía está incompleto.
-El participante realizará la publicación manual.
+El frontend final hace el pago Groth16 directamente desde el navegador:
+notas, generación de prueba y firmas de cuentas efímeras testnet. El servidor
+Bun local ya no es necesario para el flujo público. No subir ese servidor
+local como servicio abierto.
 
-## Arquitectura actual del starter
+## Ajustes para este fork
 
-- `apps/web`: React + Vite, salida estática `apps/web/dist`.
-- `apps/api`: servidor Bun, puerto 43122; invoca programas nativos de circuitos
-  y Stellar para las rutas de prueba.
-- El proxy `/api` de `vite.config.ts` funciona en desarrollo. No queda
-  incorporado al sitio estático generado por `vite build`.
+- Repositorio: `DNO8/zk-pay-starter`, rama `main`.
+- Root Directory: `apps/web`.
+- Framework: Vite.
+- Runtime de instalación probado: Bun 1.4.3.
+- Build: `bun run build`.
+- Output: `dist`.
+- Conservar acceso a archivos fuera de Root Directory para el workspace
+  `packages/shared` y la función educativa que importa `apps/api/src/openrouter`.
+- Los cuatro archivos públicos de `apps/web/public/payment` se incluyen en el
+  commit, vinculados por hashes a la evidencia del retiro confirmado.
 
-## Compilación del frontend
+El `vercel.json` de esa carpeta incluye rutas SPA y preserva `/api`, `/payment`
+y `/assets`. Las claves de prueba creadas en el navegador no se envían al backend.
+Guardar la nota y el respaldo privado de la cuenta receptora antes de cerrar.
 
-Desde la raíz del repositorio:
+## OpenRouter: necesario para completar el concurso
 
-Usar Bun 1.4.3, versión probada con este lockfile; Bun 1.3 no interpretó el
-`lockfileVersion: 2` del repositorio durante la preparación.
+El paso se entrega desactivado por seguridad. El participante debe configurar
+privadamente las variables de servidor `OPENROUTER_API_KEY`,
+`OPENROUTER_MAX_CALLS=1` y `AI_ACCESS_TOKEN` (al menos 32 caracteres). Nunca usar
+prefijo `VITE_`. La clave de OpenRouter debe tener límite de gasto en el proveedor;
+el contador en memoria de la función no es un presupuesto global.
 
-```sh
-bun install --frozen-lockfile
-cd apps/web && bun run build
-```
+El token de acceso se introduce en la página y no se publica en el bundle.
+La llamada solo lleva un prompt educativo fijo, sin datos del pago. Aún no hay
+una llamada real registrada: no declarar GAP-7 terminado hasta comprobarla.
 
-Para una importación del monorepo, conservar la raíz como directorio del proyecto
-y usar `apps/web/dist` como directorio de salida. Las rutas de React requieren
-una reescritura de navegación a `index.html` que no intercepte `/api`.
+## Verificación pendiente en la URL publicada
 
-## Condiciones antes de una demo pública funcional
+Abrir `/app`, crear cuentas testnet, guardar nota, depositar, generar prueba en
+el navegador, retirar desde la cuenta receptora y abrir el hash en Stellar Expert.
+Comprobar que la confirmación proviene del RPC. Probar también un intento de
+reutilización. Validar OpenRouter por separado con su configuración privada.
 
-1. Implementar el flujo del participante y verificarlo en testnet.
-2. Definir dónde se ejecuta la generación de pruebas y las operaciones del backend.
-   El servidor Bun actual requiere ejecutables nativos y archivos locales; no
-   basta con subir el frontend a un alojamiento estático.
-3. Configurar un destino HTTPS real para `/api`, o adaptar expresamente las
-   funciones para el alojamiento elegido. No hay un endpoint listo todavía.
-4. Revisar las rutas de depuración antes de exponer el backend. El starter puede
-   devolver claves de cuentas de prueba y salidas de procesos; no publicarlas
-   tal cual junto con una clave OpenRouter o una cuenta firmante.
-5. Mantener `OPENROUTER_API_KEY` y las claves Stellar exclusivamente en el entorno
-   privado apropiado. Nunca usar prefijo `VITE_` para secretos, ni subir `.env`.
-6. Validar en la URL pública una operación confirmada y los casos de error.
+Las pruebas y la compilación local pasan; Chromium local no pudo iniciarse por
+restricción de sockets del entorno. No se afirma una prueba visual ni E2E del
+navegador público. El participante realizará el despliegue manual.
 
-Este documento no afirma que el backend esté desplegado ni que las variables
-de entorno estén configuradas. Los valores definitivos y las instrucciones
-de producción se completarán al verificar la implementación.
+Detalles: [apps/web/DEPLOYMENT.md](../apps/web/DEPLOYMENT.md).

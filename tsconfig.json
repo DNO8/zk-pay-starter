@@ -7,7 +7,8 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "types": ["bun-types"],
+    "types": ["bun"],
+    "jsx": "react-jsx",
     "noEmit": true
   },
   "include": ["scripts", "packages", "apps"]

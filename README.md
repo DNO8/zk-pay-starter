@@ -1,4 +1,8 @@
-# zk-pay-starter
+# zk-pay-starter — entrega DNO8
+
+Este fork implementa el pago Circom/Groth16 y tiene un retiro real confirmado en testnet. Ver [SOLUTION.md](SOLUTION.md), [evidencia](docs/evidence/private-payment.json) y [publicación manual en Vercel](apps/web/DEPLOYMENT.md). OpenRouter real y la validación de la URL pública siguen pendientes. Nunca usar mainnet.
+
+> Las instrucciones originales del taller siguen debajo como referencia. La ruta Noir protegida es no-ZK; el pago de este fork usa Groth16.
 
 Fork this repo, run one setup command, and verify a real ZK proof on
 **Stellar testnet**. Then — in 1 to 2 hours, with AI — turn that pipeline into

@@ -18,7 +18,7 @@ function Shell() {
         </NavLink>
       </nav>
       <Routes>
-        <Route path="/" element={<DebugPage />} />
+        <Route path="/" element={<AppPage />} />
         <Route path="/debug" element={<DebugPage />} />
         <Route path="/app" element={<AppPage />} />
       </Routes>

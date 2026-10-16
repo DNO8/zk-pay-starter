@@ -26,10 +26,12 @@
       "name": "@zk-pay/web",
       "version": "0.1.0",
       "dependencies": {
+        "@stellar/stellar-sdk": "^14.5.0",
         "@zk-pay/shared": "workspace:*",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-router-dom": "^7.1.1",
+        "snarkjs": "^0.7.5",
       },
       "devDependencies": {
         "@types/react": "^19.0.0",

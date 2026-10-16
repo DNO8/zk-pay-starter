@@ -60,8 +60,8 @@ const tx = new TransactionBuilder(acc, { fee: "10000000", networkPassphrase: pas
   .setTimeout(60)
   .build();
 const sim = await server.simulateTransaction(tx);
-if ("error" in sim && sim.error) {
-  console.error(sim.error);
+if (!rpc.Api.isSimulationSuccess(sim)) {
+  console.error("Soroban simulation did not succeed");
   process.exit(1);
 }
 const resources = (

@@ -1,11 +1,7 @@
 pragma circom 2.1.9;
-
 include "../lib/poseidon_classic.circom";
 
-/// Public: root, nullifierHash, recipient, fee.
-/// Private: nullifier, secret, pathElements[8], pathIndices[8].
-///
-/// TODO(GAP-2c): withdraw.circom, same statement as Noir  → docs/lessons/02.md#hints
+// Public order must match the pool and proof encoders exactly.
 template Withdraw(levels) {
     signal input root;
     signal input nullifierHash;
@@ -15,23 +11,29 @@ template Withdraw(levels) {
     signal input secret;
     signal input pathElements[levels];
     signal input pathIndices[levels];
-
-    // Keep the file compiling. Replace with the real statement.
-    component dummy = Hash2();
-    dummy.a <== 0;
-    dummy.b <== 0;
-
-    signal dummyPub;
-    dummyPub <== root * nullifierHash * (recipient + 1) * (fee + 1);
-    dummyPub * dummyPub === dummyPub * dummyPub;
-
-    // TODO(GAP-2c): commitment = Hash2(nullifier, secret)
-    // TODO(GAP-2c): Merkle membership of commitment under root
-    // TODO(GAP-2c): nullifierHash === Hash2(nullifier, 1)
-    // TODO(GAP-2c): bind recipient and fee (square them so they cannot be unused)
-
-    signal unusedPath;
-    unusedPath <== pathElements[0] + pathIndices[0];
+    component commitment = Hash2();
+    commitment.a <== nullifier;
+    commitment.b <== secret;
+    component spent = Hash2();
+    spent.a <== nullifier;
+    spent.b <== 1;
+    spent.out === nullifierHash;
+    signal nodes[levels + 1];
+    nodes[0] <== commitment.out;
+    component hashes[levels];
+    for (var i = 0; i < levels; i++) {
+        pathIndices[i] * (pathIndices[i] - 1) === 0;
+        hashes[i] = Hash2();
+        hashes[i].a <== nodes[i] + pathIndices[i] * (pathElements[i] - nodes[i]);
+        hashes[i].b <== pathElements[i] + pathIndices[i] * (nodes[i] - pathElements[i]);
+        nodes[i + 1] <== hashes[i].out;
+    }
+    nodes[levels] === root;
+    // Nonlinear constraints retain these public inputs in the Groth16 statement.
+    // Their values may be freely chosen BEFORE proving, never swapped afterwards.
+    signal recipientSquared;
+    signal feeSquared;
+    recipientSquared <== recipient * recipient;
+    feeSquared <== fee * fee;
 }
-
 component main {public [root, nullifierHash, recipient, fee]} = Withdraw(8);

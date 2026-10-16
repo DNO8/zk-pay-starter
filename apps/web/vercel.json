@@ -1,0 +1,5 @@
+{
+  "buildCommand": "bun run build",
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/((?!api/|payment/|assets/).*)", "destination": "/index.html" }]
+}

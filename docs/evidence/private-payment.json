@@ -1,0 +1,158 @@
+{
+  "network": "testnet",
+  "transactions": [
+    {
+      "label": "upload withdrawVerifier",
+      "hash": "5dad602611da220ea512419b52965c6b3dc1686c0729d80fc18f48eadd9fbcfa",
+      "status": "SUCCESS",
+      "source": "GDREMJPQAI5RURNEEFMLZHKMBDDYYC7FPYKHXGZN5L4O6362JWJBY3P4",
+      "url": "https://stellar.expert/explorer/testnet/tx/5dad602611da220ea512419b52965c6b3dc1686c0729d80fc18f48eadd9fbcfa",
+      "submissionStatus": "PENDING",
+      "ledger": 5233686
+    },
+    {
+      "label": "deploy withdrawVerifier",
+      "hash": "db706a94f22cee6d0ed8ef585d04f8f9b9d6671cad7d9261b940d74eee1a7de5",
+      "status": "SUCCESS",
+      "source": "GDREMJPQAI5RURNEEFMLZHKMBDDYYC7FPYKHXGZN5L4O6362JWJBY3P4",
+      "url": "https://stellar.expert/explorer/testnet/tx/db706a94f22cee6d0ed8ef585d04f8f9b9d6671cad7d9261b940d74eee1a7de5",
+      "submissionStatus": "PENDING",
+      "ledger": 5233687
+    },
+    {
+      "label": "upload pool",
+      "hash": "f5e5068e3c9091fade6dbcf60fceb596c8d6a196f2d9dbea90f398dabd3c07ed",
+      "status": "SUCCESS",
+      "source": "GDREMJPQAI5RURNEEFMLZHKMBDDYYC7FPYKHXGZN5L4O6362JWJBY3P4",
+      "url": "https://stellar.expert/explorer/testnet/tx/f5e5068e3c9091fade6dbcf60fceb596c8d6a196f2d9dbea90f398dabd3c07ed",
+      "submissionStatus": "PENDING",
+      "ledger": 5233688
+    },
+    {
+      "label": "deploy pool",
+      "hash": "315e7655295b005b590bddab9531078effcb50062e53afd1af125ddb4ffc475e",
+      "status": "SUCCESS",
+      "source": "GDREMJPQAI5RURNEEFMLZHKMBDDYYC7FPYKHXGZN5L4O6362JWJBY3P4",
+      "url": "https://stellar.expert/explorer/testnet/tx/315e7655295b005b590bddab9531078effcb50062e53afd1af125ddb4ffc475e",
+      "submissionStatus": "PENDING",
+      "ledger": 5233689
+    },
+    {
+      "label": "deposit 0",
+      "hash": "49f2954eb55a265d7d90cd144ce80d6491274651886643d37a0404d567f50888",
+      "status": "SUCCESS",
+      "source": "GCRETW6LBW4SJZT7ZDEWGHW2AE6CYZGRCRWDGVYWZKG6EL6RBCOEHI3L",
+      "url": "https://stellar.expert/explorer/testnet/tx/49f2954eb55a265d7d90cd144ce80d6491274651886643d37a0404d567f50888",
+      "submissionStatus": "PENDING",
+      "ledger": 5233693
+    },
+    {
+      "label": "deposit 1",
+      "hash": "80580129afc2e90926b5addce77d7725669f167d2728d2277a6efc8083681c97",
+      "status": "SUCCESS",
+      "source": "GASDMXQZNYWZCNMO4J27XLIS6OAT5QOLLREKEYEIWJYN2EENCCJXTSXU",
+      "url": "https://stellar.expert/explorer/testnet/tx/80580129afc2e90926b5addce77d7725669f167d2728d2277a6efc8083681c97",
+      "submissionStatus": "PENDING",
+      "ledger": 5233694
+    },
+    {
+      "label": "withdraw",
+      "hash": "771a8123910dfecdc6779c3c53a51166ae379111ad6ddbebe15fea1dd0cc9b32",
+      "status": "SUCCESS",
+      "source": "GDKAQR4JLSEMTIIULMAKPCYFTE2C75PIRBYECYFACXOCLI7G4E2IIOEH",
+      "url": "https://stellar.expert/explorer/testnet/tx/771a8123910dfecdc6779c3c53a51166ae379111ad6ddbebe15fea1dd0cc9b32",
+      "submissionStatus": "PENDING",
+      "ledger": 5233699
+    }
+  ],
+  "contracts": {
+    "withdrawVerifier": "CBQL57MXNKYOGKAVIEPRXEJTR22LCVT4DEKYTVIBZK7OXNNQIXPXZNNY",
+    "pool": "CBHAHRJDPL7JB6GVNZ7H2EPNIWWBBDYBAP2EUL4CSNO4RVTR5VOHMDZO"
+  },
+  "scope": "Real fixed-denomination Circom Groth16 ZK membership payment on Stellar testnet; educational setup only",
+  "denominationStroops": "10000000",
+  "wallets": {
+    "alice": "GCRETW6LBW4SJZT7ZDEWGHW2AE6CYZGRCRWDGVYWZKG6EL6RBCOEHI3L",
+    "charlie": "GASDMXQZNYWZCNMO4J27XLIS6OAT5QOLLREKEYEIWJYN2EENCCJXTSXU",
+    "recipient": "GDKAQR4JLSEMTIIULMAKPCYFTE2C75PIRBYECYFACXOCLI7G4E2IIOEH"
+  },
+  "funding": {
+    "alice": {
+      "provider": "Stellar Friendbot",
+      "address": "GCRETW6LBW4SJZT7ZDEWGHW2AE6CYZGRCRWDGVYWZKG6EL6RBCOEHI3L",
+      "hash": "19b873de65265a345b9f85708af4241e5084292916ea25f39e7f71bb212ab133",
+      "confirmed": true,
+      "source": "GAHQDLORTRL73Y3EP4KLDB2SZ2BZQPMGRVNSSHYP2M5SBGCMHUGZU6A7"
+    },
+    "charlie": {
+      "provider": "Stellar Friendbot",
+      "address": "GASDMXQZNYWZCNMO4J27XLIS6OAT5QOLLREKEYEIWJYN2EENCCJXTSXU",
+      "hash": "0030664d41208b4cb928b6ea7f7ebfd80adcadfcd80605024d640f35bfa24539",
+      "confirmed": true,
+      "source": "GBRGXPC4JC4UD4OD3H67SFXF6DZUDIO6D3D3UX4547HA6DLVEQBO33SJ"
+    },
+    "recipient": {
+      "provider": "Stellar Friendbot",
+      "address": "GDKAQR4JLSEMTIIULMAKPCYFTE2C75PIRBYECYFACXOCLI7G4E2IIOEH",
+      "hash": "b1ee217c9557cc9228130793305167d91cde08bed04836d6999f675f9810a490",
+      "source": "GBNJUQO3U264TKGMD7IRZWLMZ7D3TSJYUNJYTCJAEA6OWO4I3NGAT6NW",
+      "confirmed": true
+    }
+  },
+  "artifactSha256": {
+    "pool": "892a7bed9571f73bf6da2deb07bf339c3af0e3dbe09adf34c5f537821f403146",
+    "verifier": "56c7a4b2bd48a679bfb9556efbf36a50bb899bcbaae21272ce6991e7292b072c",
+    "vk": "425f0aa934afee026d658b26bf776043cb7fe5594f9e4ff319eec4c47c0081cf"
+  },
+  "deposits": [
+    {
+      "source": "GCRETW6LBW4SJZT7ZDEWGHW2AE6CYZGRCRWDGVYWZKG6EL6RBCOEHI3L",
+      "commitment": "19832053547181219398620886630747684671231712135181541110340489165135433818695",
+      "index": 0,
+      "amountStroops": "10000000",
+      "hash": "49f2954eb55a265d7d90cd144ce80d6491274651886643d37a0404d567f50888"
+    },
+    {
+      "source": "GASDMXQZNYWZCNMO4J27XLIS6OAT5QOLLREKEYEIWJYN2EENCCJXTSXU",
+      "commitment": "2585587377273596370885899402506314061223931876681568444832035960332638407012",
+      "index": 1,
+      "amountStroops": "10000000",
+      "hash": "80580129afc2e90926b5addce77d7725669f167d2728d2277a6efc8083681c97"
+    }
+  ],
+  "root": "9676345394601123908052406512455768987065988242395693953093236896732616252668",
+  "nullifierHash": "9278185090517129923964837849513963670432353745911168243423648994403417624663",
+  "recipientField": "8351980916061918044577897618616726865092241056867498091632788906223740204160",
+  "proofSha256": "0c46d8ea731c1dd5c6d2b7f5c33858476637656d959ad8e000eb9e2f104559fd",
+  "rejections": {
+    "tamperedProof": {
+      "status": "SIMULATION_REJECTED",
+      "contractErrorCode": 5,
+      "error": "HostError: Error(Contract, #5)",
+      "checkedAt": "2026-10-16T23:07:56.014Z",
+      "diagnosticsSha256": "72ab2891ec7e80dfc2ffcf5dff96469dd7b0dd361fdb4399977f88860c3fd1f2"
+    },
+    "doubleSpend": {
+      "status": "SIMULATION_REJECTED",
+      "contractErrorCode": 4,
+      "error": "HostError: Error(Contract, #4)",
+      "checkedAt": "2026-10-16T23:08:20.282Z",
+      "diagnosticsSha256": "bb8b65db6a01839c04d0070bcfff98478b45f5f8f15d0b475aad2d62557a333c"
+    }
+  },
+  "recipientBalanceBefore": "100000000000",
+  "recipientBalanceAfter": "100007474888",
+  "withdrawalFeeStroops": "2525112",
+  "recipientBalanceDelta": "7474888",
+  "grossPayoutStroops": "10000000",
+  "completedAt": "2026-10-16T23:08:22.598Z",
+  "zeroKnowledge": true,
+  "provingPath": "circom-groth16",
+  "privacyLimitations": [
+    "Local one-party Groth16 setup is not a production multi-party trusted ceremony",
+    "Two-depositor anonymity set is small",
+    "Timing, public funding and withdrawal recipient remain observable",
+    "Recipient must authorize withdrawal, and pays its transaction fee",
+    "Local trusted prover sees the bearer note; no production privacy claim"
+  ]
+}

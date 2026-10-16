@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { $ } from "bun";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const ROOT = join(import.meta.dir, "..");
@@ -78,11 +78,23 @@ const GAPS: Gap[] = [
   },
 ];
 
-async function markerPresent(marker: string): Promise<boolean> {
-  const r = await $`grep -r ${marker} --include='*.ts' --include='*.tsx' --include='*.rs' --include='*.nr' --include='*.circom' --include='*.md' .`.cwd(
-    ROOT,
-  ).nothrow().quiet();
-  return r.exitCode === 0 && (r.stdout.toString().length > 0);
+const scopes: Record<string, string[]> = {
+  "GAP-1": ["packages/shared/src/note.ts"],
+  "GAP-2": ["circuits/noir/withdraw/src/main.nr"],
+  "GAP-2c": ["circuits/circom/withdraw/withdraw.circom"],
+  "GAP-3": ["contracts/pool/src/lib.rs"],
+  "GAP-4": ["contracts/pool/src/lib.rs"],
+  "GAP-5": ["contracts/pool/src/lib.rs"],
+  "GAP-6": ["apps/web/src/pages/AppPage.tsx"],
+  "GAP-7": ["apps/api/src/index.ts", "apps/api/src/openrouter.ts"],
+  "GAP-8": ["docs/lessons/UNLINKABILITY.md"],
+};
+async function markerPresent(g: Gap): Promise<boolean> {
+  for (const path of scopes[g.id]) {
+    const source = await readFile(join(ROOT, path), "utf8");
+    if (source.includes(g.marker)) return true;
+  }
+  return false;
 }
 
 console.log("zk-pay-starter gap status\n");
@@ -96,8 +108,8 @@ console.log("-".repeat(88));
 
 let red = 0;
 for (const g of GAPS) {
-  const todo = await markerPresent(g.marker);
-  const status = todo ? "RED" : "GREEN?";
+  const todo = await markerPresent(g);
+  const status = todo ? "RED" : "NO TODO";
   if (todo) red++;
   const color = todo ? "\x1b[31m" : "\x1b[32m";
   console.log(
@@ -113,7 +125,4 @@ console.log(
 );
 console.log("A gap is truly green only when its named test passes.\n");
 
-const grep = await $`grep -r "TODO(GAP-" --include='*.ts' --include='*.tsx' --include='*.rs' --include='*.nr' --include='*.circom' --include='*.md' . | grep -v node_modules | grep -v target | grep -v docs/lessons | wc -l`
-  .cwd(ROOT)
-  .text();
-console.log(`TODO(GAP-*) hits outside docs/lessons: ${grep.trim()}`);
+console.log("NO TODO means source scaffold filled, not tests passed or privacy established. Check SOLUTION.md for evidence and pending items.");
