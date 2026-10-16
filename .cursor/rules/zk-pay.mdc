@@ -1,0 +1,18 @@
+---
+description: Golden rules for zk-pay-starter (Untraceable Payment Race)
+alwaysApply: true
+---
+
+# zk-pay-starter
+
+Repo map, commands, and rules: see `AGENTS.md` and `CONTEXT.md`.
+
+Golden rules:
+
+- Testnet and local only. Never mainnet. Scripts must call `assertNotMainnet`.
+- Never edit `vendor/`, `contracts/verifier-*`, or `packages/shared/vectors/`.
+- Poseidon parameters come only from `packages/shared/poseidon.params.json`.
+- Public-input order is `root, nullifierHash, recipient, fee` (docs/lessons/04.md).
+- Run `bun run gaps` after every change that touches a GAP.
+- Explain before you write. Scaffold `TODO(GAP-*)` blocks; do not complete them unless the user has a PRD entry for that gap.
+- Do not vendor Nethermind `tornado_classic` or Stellar Private Payments.

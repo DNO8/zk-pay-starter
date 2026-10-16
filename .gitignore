@@ -1,0 +1,50 @@
+node_modules/
+dist/
+build/
+target/
+.DS_Store
+.env
+.env.local
+deployment.json
+*.wasm
+.contract_id
+.stellar/
+.cursor-tmp/
+
+# Circuit build artifacts (hello VK/zkey are committed under artifacts/)
+circuits/**/target/
+circuits/circom/**/*.r1cs
+circuits/circom/**/*.sym
+circuits/circom/**/*_js/
+circuits/circom/**/*.wtns
+circuits/circom/lib/hash2_main_build/
+circuits/circom/ptau/*.ptau
+!circuits/circom/ptau/.gitkeep
+circuits/circom/hello/proof.json
+circuits/circom/hello/public.json
+circuits/circom/hello/witness.wtns
+
+# Generated bindings
+bindings/**/src/
+bindings/**/dist/
+bindings/**/node_modules/
+!bindings/.gitkeep
+
+# Test / coverage
+test_snapshots/
+coverage/
+playwright-report/
+test-results/
+*.log
+
+# IDE
+.idea/
+.vscode/
+
+# Secrets
+*.secret
+openrouter.key
+
+# Agent / upload scratch (not part of the starter)
+agent-tools/
+uploads/

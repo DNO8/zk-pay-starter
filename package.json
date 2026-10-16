@@ -1,0 +1,43 @@
+{
+  "name": "zk-pay-starter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tutorial monorepo for a private payment on Stellar testnet. Two proving paths: Noir+UltraHonk and Circom+Groth16.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "setup": "bun run scripts/setup.ts",
+    "doctor": "bun run scripts/doctor.ts",
+    "build": "bun run scripts/build.ts",
+    "deploy": "bun run scripts/deploy.ts",
+    "bindings": "bun run scripts/bindings.ts",
+    "prove:hello": "bun run scripts/prove.ts hello",
+    "prove:withdraw": "bun run scripts/prove.ts withdraw",
+    "verify:hello": "bun run scripts/verify.ts hello",
+    "verify:withdraw": "bun run scripts/verify.ts withdraw",
+    "test": "bun run scripts/test.ts",
+    "test:given": "bun run scripts/test.ts --given",
+    "gaps": "bun run scripts/gaps.ts",
+    "dev": "bun run scripts/dev.ts",
+    "dev:web": "bun --cwd apps/web run dev",
+    "dev:api": "bun --cwd apps/api run dev",
+    "tokens": "bun run scripts/tokens.ts",
+    "gen:consts": "bun run packages/shared/scripts/gen-consts.ts",
+    "cost": "bun run scripts/cost.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^14.5.0",
+    "@zk-pay/shared": "workspace:*",
+    "snarkjs": "^0.7.5"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}

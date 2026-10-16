@@ -1,0 +1,30 @@
+[workspace]
+resolver = "2"
+members = [
+    "contracts/hello-gate",
+    "contracts/pool",
+    "contracts/verifier-ultrahonk",
+    "contracts/verifier-groth16",
+    "vendor/ultrahonk-soroban-verifier",
+]
+
+[workspace.package]
+license = "MIT"
+edition = "2021"
+rust-version = "1.92"
+
+[workspace.dependencies]
+soroban-sdk = { version = "28.0.0", default-features = false }
+ultrahonk_soroban_verifier = { path = "vendor/ultrahonk-soroban-verifier", default-features = false }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+overflow-checks = true
+
+[profile.release-with-logs]
+inherits = "release"
+debug-assertions = true

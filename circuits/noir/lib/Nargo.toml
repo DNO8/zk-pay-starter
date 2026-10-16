@@ -1,0 +1,6 @@
+[package]
+name = "poseidon_classic"
+type = "lib"
+authors = ["zk-pay-starter"]
+
+[dependencies]

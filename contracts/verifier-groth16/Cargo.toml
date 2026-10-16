@@ -1,0 +1,17 @@
+[package]
+name = "verifier-groth16"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "BN254 Groth16 verifier for Soroban. Adapted from jamesbachini/CircomStellar (MIT, BLS12-381) to CAP-0074 BN254."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

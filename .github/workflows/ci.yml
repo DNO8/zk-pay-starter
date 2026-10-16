@@ -1,0 +1,33 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  given:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: GIVEN JS tests (no network)
+        run: |
+          bun install
+          bun test packages/shared/src/poseidon.test.ts packages/shared/src/encode.test.ts scripts/mainnet-guard.test.ts
+          bun test packages/shared/src/note.test.ts --test-name-pattern "GIVEN"
+      - name: GAP tests must be red on main
+        run: |
+          set +e
+          bun test packages/shared/src/note.test.ts --test-name-pattern "GAP-1"
+          s1=$?
+          bun test packages/shared/src/app.gap.test.ts
+          s2=$?
+          if [ $s1 -eq 0 ] || [ $s2 -eq 0 ]; then
+            echo "GAP tests unexpectedly passed on main"
+            exit 1
+          fi
+          echo "GAP tests red as expected"
+      - name: grep GAP markers
+        run: |
+          count=$(grep -r "TODO(GAP-" --include='*.ts' --include='*.tsx' --include='*.rs' --include='*.nr' --include='*.circom' --include='*.md' . | grep -v node_modules | grep -v .git | wc -l)
+          echo "TODO(GAP- hits: $count"
+          test "$count" -ge 8
