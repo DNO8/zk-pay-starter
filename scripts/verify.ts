@@ -42,7 +42,8 @@ async function invoke(id: string, fn: string, args: string[]) {
     fn,
     ...args,
   ];
-  console.log("$", cmd.join(" "));
+  const displayCmd = cmd.map((arg, i) => cmd[i - 1] === "--source-account" ? "[REDACTED]" : arg);
+  console.log("$", displayCmd.join(" "));
   const proc = Bun.spawn(cmd, { stdout: "inherit", stderr: "inherit" });
   const code = await proc.exited;
   if (code !== 0) process.exit(code);

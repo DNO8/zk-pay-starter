@@ -1,0 +1,91 @@
+{
+  "network": "testnet",
+  "transactions": [
+    {
+      "label": "upload verifier-ultrahonk",
+      "hash": "b1cfacfa6b45f0fee7bf2a764b0c818d74b8e76b8786edf9082fd84c56410761",
+      "url": "https://stellar.expert/explorer/testnet/tx/b1cfacfa6b45f0fee7bf2a764b0c818d74b8e76b8786edf9082fd84c56410761"
+    },
+    {
+      "label": "deploy verifier-ultrahonk",
+      "hash": "a7dd9b1a6a466a3b7e396f6ee6a571ec132ae1084f8deb7630b8581c253a9c4e",
+      "url": "https://stellar.expert/explorer/testnet/tx/a7dd9b1a6a466a3b7e396f6ee6a571ec132ae1084f8deb7630b8581c253a9c4e"
+    },
+    {
+      "label": "upload verifier-groth16",
+      "hash": "9ee47c4c5e86141bcb4a2477e09d29673fa7546a071312e59c77596639e631d9",
+      "url": "https://stellar.expert/explorer/testnet/tx/9ee47c4c5e86141bcb4a2477e09d29673fa7546a071312e59c77596639e631d9"
+    },
+    {
+      "label": "deploy verifier-groth16",
+      "hash": "1ad3e94c60ba2ae724cbb279b9a37e3959e839262eb3e6917ae11575de06c114",
+      "url": "https://stellar.expert/explorer/testnet/tx/1ad3e94c60ba2ae724cbb279b9a37e3959e839262eb3e6917ae11575de06c114"
+    },
+    {
+      "label": "set Groth16 VK",
+      "hash": "0f45f07ad46d2a6222e2178742784cdf1458a36c1acbb6999675c7bc4258e43d",
+      "url": "https://stellar.expert/explorer/testnet/tx/0f45f07ad46d2a6222e2178742784cdf1458a36c1acbb6999675c7bc4258e43d"
+    },
+    {
+      "label": "upload hello-gate",
+      "hash": "2c0b373a277dd23fe46efe585552b6f493a7939e4f84debebcacb45dacce2456",
+      "url": "https://stellar.expert/explorer/testnet/tx/2c0b373a277dd23fe46efe585552b6f493a7939e4f84debebcacb45dacce2456"
+    },
+    {
+      "label": "deploy hello-gate",
+      "hash": "f55bd53749b259ca2896e04dc2ffffdbd9a5c141b0975ab06df417056ba32b50",
+      "url": "https://stellar.expert/explorer/testnet/tx/f55bd53749b259ca2896e04dc2ffffdbd9a5c141b0975ab06df417056ba32b50"
+    },
+    {
+      "label": "upload pool",
+      "hash": "8ac2c991d638dd237b02bc7d1f4952fcb1cac28c778ec56d436e66ed3cba8949",
+      "url": "https://stellar.expert/explorer/testnet/tx/8ac2c991d638dd237b02bc7d1f4952fcb1cac28c778ec56d436e66ed3cba8949"
+    },
+    {
+      "label": "deploy pool",
+      "hash": "300cc9db426969132c0c5831a7a17a7047099f15e54afd73a8960922ea564d4a",
+      "url": "https://stellar.expert/explorer/testnet/tx/300cc9db426969132c0c5831a7a17a7047099f15e54afd73a8960922ea564d4a"
+    },
+    {
+      "label": "hello Noir verify",
+      "hash": "240e296607ad6664f3bd4a1080554699e596539ba7b31a0cf451b07fdadb3438",
+      "url": "https://stellar.expert/explorer/testnet/tx/240e296607ad6664f3bd4a1080554699e596539ba7b31a0cf451b07fdadb3438",
+      "status": "SUCCESS"
+    },
+    {
+      "label": "hello Groth16 verify",
+      "hash": "2f310a4c6534e0ff93f6a885f8cac21122b5d63b3aa30fdfa3d2c897a053648b",
+      "url": "https://stellar.expert/explorer/testnet/tx/2f310a4c6534e0ff93f6a885f8cac21122b5d63b3aa30fdfa3d2c897a053648b",
+      "status": "SUCCESS",
+      "returnValueVerified": true
+    },
+    {
+      "label": "hello gate Noir flag",
+      "hash": "f93f75f3ef8125a9b49f7678921fa6590f982dda535892e25f9c96f72d8f50b1",
+      "url": "https://stellar.expert/explorer/testnet/tx/f93f75f3ef8125a9b49f7678921fa6590f982dda535892e25f9c96f72d8f50b1",
+      "status": "SUCCESS",
+      "returnValueVerified": true
+    }
+  ],
+  "contracts": {
+    "verifier-ultrahonk": "CCBNQD2HCLVYDSD5UCYLAMUVCNN6QA6MHOYNOSTF6VLKKBDXOFJUCX2X",
+    "verifier-groth16": "CB4RTM3N2PKYSQPB5Q4SC3CZ6E2CZLMBOXIASAVFYSTFAB6LN7CNRBWQ",
+    "hello-gate": "CC2MRD35BA6ENJTVSD5Y3TUNQIBM3WQWVJDFKHMCECHRHVKVUDAGGF2Y",
+    "pool": "CAFFMXR3Z4YSPQLV7EVBIFFJLR6UFFXI3NXDJB262JZWKNVOTRAFSLWW"
+  },
+  "deployer": "GDREMJPQAI5RURNEEFMLZHKMBDDYYC7FPYKHXGZN5L4O6362JWJBY3P4",
+  "completedAt": "2026-10-16T22:53:39.596Z",
+  "scope": "GIVEN hello proofs only. No private withdrawal or GAP completion.",
+  "artifactSha256": {
+    "target/wasm32v1-none/release/verifier_ultrahonk.wasm": "75a96c9367718c546012c94de08e4c784473f34c9ac86ae4c60cac5e39bcf94c",
+    "target/wasm32v1-none/release/verifier_groth16.wasm": "56c7a4b2bd48a679bfb9556efbf36a50bb899bcbaae21272ce6991e7292b072c",
+    "target/wasm32v1-none/release/hello_gate.wasm": "a733840721a4186ed1fbd6ee397ca380e8226b626507503e5f8947e51b91a035",
+    "target/wasm32v1-none/release/pool.wasm": "a25f2c141c2881b175a572572d974386765ebedbf07bf481f01a9a71ac32063c",
+    "artifacts/noir/hello/vk": "adb99ed30af232f0a5073e1da580be4fa30c4da1619724f9ade69fefc20b61ed",
+    "artifacts/noir/hello/proof": "a6b42c099000a39c2f993c41c954161a0054adcfb80b2af5ea262567f9e9eb48",
+    "artifacts/noir/hello/public_inputs": "887bf140ce0b6a497ed8db5c7498a45454f0b2bd644b0313f7a82acc084d0027",
+    "artifacts/circom/hello/vk.bin": "88de3cd0384beae8a907caef357dbbfc7b7335f3ed03c04125d37d09030ff9a8",
+    "artifacts/circom/hello/proof.bin": "c1db891fd5771d21ece628e8872809904d88f361fafce60945560351a6dfb3b1",
+    "artifacts/circom/hello/public.bin": "a802572c436574f713d43f1852859f4496d694de0e5b17b89cf983439e6143c0"
+  }
+}
